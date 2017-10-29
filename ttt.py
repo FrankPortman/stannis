@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import random
 
 board = [[None] * 3 for i in range(3)]
@@ -74,8 +72,8 @@ class Game(object):
         self.n = n
         # self.backend = self.backend_chooser[backend]
         # self.scorer = self.backend(n)
-        self.scores = [[[None] * i] for i in [self.n, self.n, 2]]
-        self.scores = [0 for i in range(2 * n + 2)]
+        self.scores = [[0] * i for i in [self.n, self.n, 2]]
+        #self.scores = [0 for i in range(2 * n + 2)]
         # self.board = [[None] * n for i in range(n)]
         self.pretty_board = [['  '] * n for i in range(n)]
         self.board = self.pretty_board
@@ -107,7 +105,7 @@ class Game(object):
             self.score[2][1] += point
 
     def move(self, player, row, col):
-        self.board[row][col] = 5
+        self.board[row][col] = self.X
         self.turn += 1
 
     def _victory_checker(self, which):
