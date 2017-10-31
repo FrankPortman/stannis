@@ -1,11 +1,5 @@
 import random
 
-def compose2(f, g):
-    return lambda *a, **kw: f(g(*a, **kw))
-
-def compose(*fs):
-    return reduce(compose2, fs)
-
 '''
 Generalized n x n x d tic tac toe. 
 You need d in a row on an n x n grid to win.
@@ -30,7 +24,7 @@ class Board(object):
             print(*[i if i == X or i == O else '  ' for i in row], sep=" |")
             print('----' * self.n)
 
-    def _direction_checker(self, col_dir=0, row_dir=0):
+    def _direction_checker(self, row_dir=0, col_dir=0):
         '''
         Returns a function that checks a certain row direction or column
         direction or both (diagonal). We use these to construct the broader
@@ -40,79 +34,61 @@ class Board(object):
         specific check, +1 if you want an increasing checker or -1 if you want a
         decreasing checker.
 
-        We use absolute values of distances to the edge of the board to abstract
-        positive/negative cases for increasing vs decreasing traversal.
-
         Returns number of matches equal to board(row, col) in a single direction,
         returning 0 if the first step in said direction is not equal to board(row, col).
 
-        TODO: do this recursively to patent any d continguous tiles (any direction, even multiple)
-        tic tac toe. At each step count (# adjacent cells - 1) until none. Each one returns the max
-        adjaceny path it can find.
-
-        This whole thing is probably uglier than it needs to be, but the optimizations it offers
-        over a full brute force each time make the AI work marginally better. *shrug*
+        This whole thing is probably uglier than it needs to be, but the 
+        optimizations it offers over a full brute force each time make the AI 
+        work marginally better. *shrug*
         '''
-        def get_limits(pos, dir):
-            '''
-            Returns distance to edge, given step direction.
-            '''
-            if dir == 1:
-                return self.n - pos - 1
-            if dir == -1:
-                return pos
 
         def checker(row, col):
+            '''
+            Try at most (d - 1) in a given direction and stop early if we hit 
+            an edge. Only need (d - 1) in any given direction since we are only
+            looking for matches on a given (row, col), adding 1 later.
+            '''
             val = self.board[row][col]
-            score = 0
+            matches = 0
 
-            if val is None:
-                return score
-
-            limits = [self.d]
-            # In order not to take the min of NoneTypes
-            if row_dir:
-                limits.append(get_limits(row, row_dir))
-            if col_dir:
-                limits.append(get_limits(col, col_dir))
-
-            limit = min(limits)
-
-            for i in range(1, limit + 1):
-                if self.board[row + row_dir * i][col + col_dir * i] != val:
+            for i in range(1, self.d):
+                cr = row + row_dir * i
+                cc = col + col_dir * i
+                if cr < 0 or cc < 0:
                     break
-                score += 1
-            return score
-
+                if cr >= self.n or cc >= self.n:
+                    break
+                if self.board[cr][cc] != val:
+                    break
+                matches += 1
+            return matches
         return checker
 
     def check_victory(self, row, col):
-        def make_checker(*args):
-            def checker(row, col):
+        if self.board[row][col] is None:
+            return False
+
+        def make_scorer(row_dirs, col_dirs):
+            def scorer():
                 score = 1 
-                for checker in list(args):
+                for row_dir, col_dir in zip(row_dirs, col_dirs):
+                    checker = self._direction_checker(row_dir=row_dir, 
+                                                      col_dir=col_dir)
                     score += checker(row, col)
                     if score >= self.d:
                         return self.board[row][col]
                 return False
-            return checker
+            return scorer
 
-        horizontal_checker = make_checker(self._direction_checker(col_dir=1, row_dir=0),
-                                          self._direction_checker(col_dir=-1, row_dir=0))
+        horizontal_scorer = make_scorer([0, 0], [-1, 1])
+        vertical_scorer = make_scorer([-1, 1], [0, 0])
+        diagonal_scorer = make_scorer([-1, 1], [-1, 1])
+        antidiag_scorer = make_scorer([-1, 1], [1, -1])
 
-        vertical_checker = make_checker(self._direction_checker(col_dir=0, row_dir=1),
-                                        self._direction_checker(col_dir=0, row_dir=-1))
-
-        diagonal_checker = make_checker(self._direction_checker(col_dir=1, row_dir=1),
-                                        self._direction_checker(col_dir=-1, row_dir=-1))
-
-        antidiag_checker = make_checker(self._direction_checker(col_dir=1, row_dir=-1),
-                                        self._direction_checker(col_dir=-1, row_dir=1))
-
-        return horizontal_checker(row, col) or \
-               vertical_checker(row, col)   or \
-               diagonal_checker(row, col)   or \
-               antidiag_checker(row, col)
+        return horizontal_scorer() or \
+               vertical_scorer()   or \
+               diagonal_scorer()   or \
+               antidiag_scorer()
 
     def move(self, player, row, col):
         self.board[row][col] = player
