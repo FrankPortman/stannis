@@ -18,10 +18,10 @@ class Board(object):
     '''
     Board and all that fun stuff.
     '''
-    def __init__(self, n, d):
+    def __init__(self, n, d, board=None):
         self.n = n
         self.d = d
-        self.board = [[None for _ in range(n)] for _ in range(n)]
+        self.board = board or [[None for _ in range(n)] for _ in range(n)]
 
     def print_board(self):
         print('----' * self.n + '-' * (self.n - 1))
@@ -120,10 +120,10 @@ class Game(object):
     A single game of nxnxd Tic Tac Toe.
     '''
 
-    def __init__(self, n, d, mode='computer'):
-        self.board = Board(n, d)
-        self.turn = 0
-        self.players = [X, O] if random.random() < 0.5 else [O, X]
+    def __init__(self, n, d, players=None, mode='computer', turn=None, board=None):
+        self.board = Board(n, d, board)
+        self.turn = turn or 0
+        self.players = players or ([X, O] if random.random() < 0.5 else [O, X])
         self.mode = mode
 
     @property
@@ -132,6 +132,7 @@ class Game(object):
 
     def move(self, row, col):
         self.board.move(self.current, row, col)
+        self.turn += 1
 
     def play(self):
         while True:
@@ -154,6 +155,7 @@ class Game(object):
                 col = int(col)
                 self.move(row, col)
             if self.board.check_victory(row, col):
+                self.turn -= 1
                 self.board.print_board()
                 print('{} wins!'.format(self.current))
                 break
@@ -161,4 +163,3 @@ class Game(object):
                 self.board.print_board()
                 print('Tie!')
                 break
-            self.turn += 1
