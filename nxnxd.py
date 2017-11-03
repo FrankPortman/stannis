@@ -1,4 +1,9 @@
+from __future__ import print_function
+
+from itertools import product
 import random
+
+from ai import *
 
 '''
 Generalized n x n x d tic tac toe. 
@@ -6,8 +11,8 @@ You need d in a row on an n x n grid to win.
 '''
 
 # Marks to strings
-X = ' X'
-O = ' O'
+X = u' ❌'
+O = u' ⭕'
 
 class Board(object):
     '''
@@ -16,13 +21,13 @@ class Board(object):
     def __init__(self, n, d):
         self.n = n
         self.d = d
-        self.board = [[None] * n] * n
+        self.board = [[None for _ in range(n)] for _ in range(n)]
 
     def print_board(self):
-        print('----' * self.n)
+        print('----' * self.n + '-' * (self.n - 1))
         for row in self.board:
-            print(*[i if i == X or i == O else '  ' for i in row], sep=" |")
-            print('----' * self.n)
+            print(*[i if i == X or i == O else '  ' for i in row], sep="  |")
+            print('----' * self.n + '-' * (self.n - 1))
 
     def _direction_checker(self, row_dir=0, col_dir=0):
         '''
@@ -92,24 +97,68 @@ class Board(object):
 
     def move(self, player, row, col):
         self.board[row][col] = player
-        self.turn += 1
 
+    def get_board_state(self):
+        for r,c in product(range(self.n), range(self.n)):
+            victory = self.check_victory(r, c)
+            if victory:
+                return victory
+        return False
+
+    def get_available_moves(self):
+        '''
+        Returns coordinates that aren't `None` so the bot can do its thang.
+        '''
+        return [
+            (r, c) for r, c 
+            in product(range(self.n), range(self.n)) 
+            if self.board[r][c] is None
+        ]
 
 class Game(object):
     ''' 
     A single game of nxnxd Tic Tac Toe.
     '''
 
-    def __init__(self, n, d):
+    def __init__(self, n, d, mode='computer'):
         self.board = Board(n, d)
         self.turn = 0
-        self.current = X if random.random() < 0.5 else O
+        self.players = [X, O] if random.random() < 0.5 else [O, X]
+        self.mode = mode
 
-    def play_game(game):
+    @property
+    def current(self):
+        return self.players[self.turn % 2]
+
+    def move(self, row, col):
+        self.board.move(self.current, row, col)
+
+    def play(self):
         while True:
-            self.board.move(self.current, row, col)
+            self.board.print_board()
+            print('{} turn'.format(self.current))
+
+            if self.mode != 'computer':
+                row = input('row?')
+                col = input('col?')
+                row = int(row)
+                col = int(col)
+                self.move(row, col)
+            elif self.mode == 'computer' and self.current == X:
+                _, (row, col) = minimax(self, True)
+                self.move(row, col)
+            elif self.mode == 'computer' and self.current == O:
+                row = input('row?')
+                col = input('col?')
+                row = int(row)
+                col = int(col)
+                self.move(row, col)
             if self.board.check_victory(row, col):
-                #self.current wins
+                self.board.print_board()
+                print('{} wins!'.format(self.current))
                 break
-        # prompt user
-        #
+            if self.board.get_available_moves() == []:
+                self.board.print_board()
+                print('Tie!')
+                break
+            self.turn += 1
