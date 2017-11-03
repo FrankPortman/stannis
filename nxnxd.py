@@ -115,6 +115,15 @@ class Board(object):
             if self.board[r][c] is None
         ]
 
+
+class GameVictory(Exception):
+    pass
+
+
+class GameTie(Exception):
+    pass
+
+
 class Game(object):
     ''' 
     A single game of nxnxd Tic Tac Toe.
@@ -135,6 +144,8 @@ class Game(object):
         self.turn += 1
 
     def play(self):
+        idx = input('0 or 1 index?')
+        idx = int(idx)
         while True:
             self.board.print_board()
             print('{} turn'.format(self.current))
@@ -142,17 +153,17 @@ class Game(object):
             if self.mode != 'computer':
                 row = input('row?')
                 col = input('col?')
-                row = int(row)
-                col = int(col)
+                row = int(row) - idx
+                col = int(col) - idx
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == X:
-                _, (row, col) = minimax(self, True)
+                _, (row, col) = alphabeta(self, True)
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == O:
                 row = input('row?')
                 col = input('col?')
-                row = int(row)
-                col = int(col)
+                row = int(row) - idx
+                col = int(col) - idx
                 self.move(row, col)
             if self.board.check_victory(row, col):
                 self.turn -= 1
