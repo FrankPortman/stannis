@@ -29,6 +29,9 @@ class Board(object):
             print(*[i if i == X or i == O else '  ' for i in row], sep="  |")
             print('----' * self.n + '-' * (self.n - 1))
 
+    def copy(self):
+        return [x[:] for x in self.board]
+
     def _direction_checker(self, row_dir=0, col_dir=0):
         '''
         Returns a function that checks a certain row direction or column
@@ -142,6 +145,10 @@ class Game(object):
     def move(self, row, col):
         self.board.move(self.current, row, col)
         self.turn += 1
+
+    def _undo(self, row, col):
+        self.board.board[row][col] = None
+        self.turn -= 1
 
     def play(self):
         idx = input('0 or 1 index?')

@@ -1,7 +1,7 @@
 import copy
 from functools import lru_cache
 
-from nxnxd import *
+from nxnxd import Game
 
 def score(game, victory, depth=0):
     if victory:
@@ -192,6 +192,96 @@ def alphabeta(game, player, alpha=float('-inf'), beta=float('inf'), victory=Fals
             if beta <= alpha:
                 break 
         return best_score, best_move
+
+
+# def alphabeta(game, player):
+#     MAX_DEPTH = 5
+
+#     moves = game.board.get_available_moves()
+
+#     if depth == MAX_DEPTH or victory or moves == []:
+#         return score(game, victory), None
+
+#     depth += 1
+
+#     def min_or_max_play(f):
+#         best_score = -1 * f(-1, 1) * float('inf')
+#         for r_move, c_move in moves:
+#             new_game = Game(game.board.n, 
+#                             game.board.d, 
+#                             game.players, 
+#                             game.mode, 
+#                             game.turn, 
+#                             game.board.copy())
+#             new_game.move(r_move, c_move)
+#             victory = new_game.board.check_victory(r_move, c_move)
+#             val, _ = alphabeta(new_game, not player, alpha, beta, victory, depth)
+#             is_new_best = val > best_score if f(-1, 1) == 1 else val < best_score
+#             if is_new_best:
+#                 best_score = val
+#                 best_move = (r_move, c_move)
+
+def negamax(game, player, alpha=float('-inf'), beta=float('inf'), victory=False, depth=0):
+    '''
+    Negamax + alphabeta pruning
+    '''
+    MAX_DEPTH = 5
+
+    moves = game.board.get_available_moves()
+
+    if depth == MAX_DEPTH or victory or moves == []:
+        return player * score(game, victory), None
+
+    depth += 1
+
+    best_score = float('-inf')
+    for r_move, c_move in moves:
+        new_game = Game(game.board.n, 
+                        game.board.d, 
+                        game.players, 
+                        game.mode, 
+                        game.turn, 
+                        game.board.copy())
+        new_game.move(r_move, c_move)
+        victory = new_game.board.check_victory(r_move, c_move)
+        val, _ = negamax(new_game, -player, -beta, -alpha, victory, depth)
+        val = -val
+        if val > best_score:
+            best_score = val
+            best_move = (r_move, c_move)
+        alpha = max(alpha, val)
+        if alpha >= beta:
+            break
+    return best_score, best_move
+
+
+def negamax2(game, player, alpha=float('-inf'), beta=float('inf'), victory=False, depth=0):
+    '''
+    Negamax + alphabeta pruning
+    '''
+    MAX_DEPTH = 5
+
+    moves = game.board.get_available_moves()
+
+    if depth == MAX_DEPTH or victory or moves == []:
+        return player * score(game, victory), None
+
+    depth += 1
+
+    best_score = float('-inf')
+    for r_move, c_move in moves:
+        game.move(r_move, c_move)
+        victory = game.board.check_victory(r_move, c_move)
+        val, _ = negamax(game, -player, -beta, -alpha, victory, depth)
+        val = -val
+        game._undo(r_move, c_move)
+        if val > best_score:
+            best_score = val
+            best_move = (r_move, c_move)
+        alpha = max(alpha, val)
+        if alpha >= beta:
+            break
+    return best_score, best_move
 
 
 class AI(object):
