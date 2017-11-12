@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from itertools import product
 import random
+import shutil
 
 import ai
 
@@ -18,14 +19,21 @@ class Board(object):
     '''
     Board and all that fun stuff.
     '''
-    def __init__(self, n, d, board=None):
+    def __init__(self, n, d):
         self.n = n
         self.d = d
-        self.board = board or [[None for _ in range(n)] for _ in range(n)]
+        self.board = [[None for _ in range(n)] for _ in range(n)]
+        self.available_moves = set(product(range(n), range(n)))
 
     def print_board(self):
+        # columns = shutil.get_terminal_size().columns
+        # border = '----' * self.n + '-' * (self.n - 1)
+        # print(border.center(columns))
         print('----' * self.n + '-' * (self.n - 1))
         for row in self.board:
+            rep = '  |'.join(i if i is not None else '  ' for i in row)
+            # print(rep.center(columns))
+            # print(border.center(columns))
             print(*[i if i == X or i == O else '  ' for i in row], sep="  |")
             print('----' * self.n + '-' * (self.n - 1))
 
@@ -100,6 +108,11 @@ class Board(object):
 
     def move(self, player, row, col):
         self.board[row][col] = player
+        # self.available_moves.remove((row, col))
+
+    def _undo(self, row, col):
+        self.board[row][col] = None
+        # self.available_moves.add((row, col))
 
     def get_board_state(self):
         for r,c in product(range(self.n), range(self.n)):
@@ -131,12 +144,26 @@ class Game(object):
     ''' 
     A single game of nxnxd Tic Tac Toe.
     '''
+    modes = [
+        'cc', # computer vs computer
+        'hc', # human vs computer
+        'ch', # computer vs human
+        'hh', # human vs human
+    ]
 
-    def __init__(self, n, d, players=None, mode='computer', turn=None, board=None):
-        self.board = Board(n, d, board)
-        self.turn = turn or 0
-        self.players = players or ([X, O] if random.random() < 0.5 else [O, X])
+    def __init__(self, n, d, mode='cc'):
+        self.board = Board(n, d)
+        self.turn = 0
+        self.players = [X, O] if random.random() < 0.5 else [O, X]
+
+        if mode not in self.modes:
+            Exception('Invalid mode selected.')
         self.mode = mode
+
+        if mode == 'hc':
+            self.human_turn = 0
+        if mode == 'ch':
+            self.human_turn = 1
 
     @property
     def current(self):
@@ -147,39 +174,51 @@ class Game(object):
         self.turn += 1
 
     def _undo(self, row, col):
-        self.board.board[row][col] = None
-        self.turn -= 1
+        self.board._undo(row, col)
+        self.turn -= 1        
 
     def play(self):
-        idx = input('0 or 1 index?')
-        idx = int(idx)
+        if self.mode != 'cc':
+            idx = input('0 or 1 index?')
+            idx = int(idx)
+
+        def human_move():
+            row = input('row?: ')
+            col = input('col?: ')
+            row = int(row) - idx
+            col = int(col) - idx
+            return row, col
+
+        def computer_move():
+            player = -1 if self.current == O else 1
+            score, (row, col) = ai.negamax2(self, player)
+            print('score: {} \n\n'.format(score))
+            return row, col
+
+        def move_handler():
+            if self.mode == 'hh':
+                return human_move()
+            elif self.mode == 'cc':
+                return computer_move()
+            else:
+                if self.turn % 2 == self.human_turn:
+                    return human_move()
+                else:
+                    return computer_move()
+
         while True:
             self.board.print_board()
             print('{} turn'.format(self.current))
-            if self.mode != 'computer':
-                row = input('row?')
-                col = input('col?')
-                row = int(row) - idx
-                col = int(col) - idx
-                self.move(row, col)
-            elif self.mode == 'computer' and self.current == X:
-                score, (row, col) = ai.negamax2(self, 1)
-                print('score: {}'.format(score))
-                self.move(row, col)
-            elif self.mode == 'computer' and self.current == O:
-                score, (row, col) = ai.negamax2(self, -1)
-                print('score: {}'.format(score))
-                self.move(row, col)
-                # row = input('row?')
-                # col = input('col?')
-                # row = int(row) - idx
-                # col = int(col) - idx
-                # self.move(row, col)
+
+            row, col = move_handler()
+            self.move(row, col)
+
             if self.board.check_victory(row, col):
                 self.turn -= 1
                 self.board.print_board()
                 print('{} wins!'.format(self.current))
                 break
+
             if self.board.get_available_moves() == []:
                 self.board.print_board()
                 print('Tie!')
