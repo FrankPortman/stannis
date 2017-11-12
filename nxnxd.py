@@ -3,7 +3,7 @@ from __future__ import print_function
 from itertools import product
 import random
 
-from ai import *
+import ai
 
 '''
 Generalized n x n x d tic tac toe. 
@@ -28,6 +28,9 @@ class Board(object):
         for row in self.board:
             print(*[i if i == X or i == O else '  ' for i in row], sep="  |")
             print('----' * self.n + '-' * (self.n - 1))
+
+    def copy(self):
+        return [x[:] for x in self.board]
 
     def _direction_checker(self, row_dir=0, col_dir=0):
         '''
@@ -143,13 +146,16 @@ class Game(object):
         self.board.move(self.current, row, col)
         self.turn += 1
 
+    def _undo(self, row, col):
+        self.board.board[row][col] = None
+        self.turn -= 1
+
     def play(self):
         idx = input('0 or 1 index?')
         idx = int(idx)
         while True:
             self.board.print_board()
             print('{} turn'.format(self.current))
-
             if self.mode != 'computer':
                 row = input('row?')
                 col = input('col?')
@@ -157,14 +163,18 @@ class Game(object):
                 col = int(col) - idx
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == X:
-                _, (row, col) = alphabeta(self, True)
+                score, (row, col) = ai.negamax2(self, 1)
+                print('score: {}'.format(score))
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == O:
-                row = input('row?')
-                col = input('col?')
-                row = int(row) - idx
-                col = int(col) - idx
+                score, (row, col) = ai.negamax2(self, -1)
+                print('score: {}'.format(score))
                 self.move(row, col)
+                # row = input('row?')
+                # col = input('col?')
+                # row = int(row) - idx
+                # col = int(col) - idx
+                # self.move(row, col)
             if self.board.check_victory(row, col):
                 self.turn -= 1
                 self.board.print_board()
