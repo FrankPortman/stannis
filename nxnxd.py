@@ -3,7 +3,7 @@ from __future__ import print_function
 from itertools import product
 import random
 
-from ai import *
+import ai
 
 '''
 Generalized n x n x d tic tac toe. 
@@ -156,7 +156,6 @@ class Game(object):
         while True:
             self.board.print_board()
             print('{} turn'.format(self.current))
-
             if self.mode != 'computer':
                 row = input('row?')
                 col = input('col?')
@@ -164,14 +163,18 @@ class Game(object):
                 col = int(col) - idx
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == X:
-                _, (row, col) = alphabeta(self, True)
+                score, (row, col) = ai.negamax2(self, 1)
+                print('score: {}'.format(score))
                 self.move(row, col)
             elif self.mode == 'computer' and self.current == O:
-                row = input('row?')
-                col = input('col?')
-                row = int(row) - idx
-                col = int(col) - idx
+                score, (row, col) = ai.negamax2(self, -1)
+                print('score: {}'.format(score))
                 self.move(row, col)
+                # row = input('row?')
+                # col = input('col?')
+                # row = int(row) - idx
+                # col = int(col) - idx
+                # self.move(row, col)
             if self.board.check_victory(row, col):
                 self.turn -= 1
                 self.board.print_board()
