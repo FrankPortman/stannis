@@ -84,7 +84,7 @@ def negamax2(game, player, alpha=float('-inf'), beta=float('inf'), victory=False
     '''
     Negamax + alphabeta pruning
     '''
-    MAX_DEPTH = 8
+    MAX_DEPTH = 7
 
     moves = game.board.get_available_moves()
 
