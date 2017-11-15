@@ -40,6 +40,9 @@ class Board(object):
     def copy(self):
         return [x[:] for x in self.board]
 
+    def serialize(self):
+        return tuple(map(tuple, self.board))
+
     def _direction_checker(self, row_dir=0, col_dir=0):
         '''
         Returns a function that checks a certain row direction or column
@@ -211,6 +214,9 @@ class Game(object):
             print('{} turn'.format(self.current))
 
             row, col = move_handler()
+            if (row, col) not in self.board.get_available_moves():
+                print('Invalid move... try again.')
+                continue
             self.move(row, col)
 
             if self.board.check_victory(row, col):

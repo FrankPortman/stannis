@@ -107,6 +107,35 @@ def negamax2(game, player, alpha=float('-inf'), beta=float('inf'), victory=False
     return best_score, best_move
 
 
+from collections import namedtuple
+
+LOWERBOUND, EXACT, UPPERBOUND = -1,0,1
+
+class TranspositionTable(object):
+    '''
+    Stateful transposition tables (memoization).
+    '''
+    Entry = namedtuple('Entry', ['flag', 'value'])
+
+    def __init__(self):
+        cache = {}
+
+    def __getitem__(self, key):
+        return cache.get(key, None)
+
+    def __setitem__(self, key, flag, value):
+        cache[key] = Entry(flag, value)
+
+
+class Negamax(object):
+
+    def __init__(self, max_depth=7, tt=TranspositionTable()):
+        self.max_depth = max_depth
+        self.tt = tt
+
+    def lookup(self, node):
+        self.tt[node] 
+
 class AI(object):
     def next_move(self):
         pass
