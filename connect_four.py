@@ -192,7 +192,7 @@ class Game(object):
         self.turn -= 1     
 
     def play(self):
-        negamax = ai.Negamax(10)
+        negamax = ai.Negamax(12)
 
         if self.mode != 'cc':
             idx = input('0 or 1 index?')

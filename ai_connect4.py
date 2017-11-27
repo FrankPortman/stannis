@@ -145,7 +145,8 @@ class Negamax(object):
 
         def _negamax(game, player, alpha, beta, victory, depth):
             moves = game.board.get_available_moves()
-            random.shuffle(moves)
+            if depth == 0:
+                random.shuffle(moves)
             alpha_original = alpha
             serialized_state = tuple([game.board.serialize(), player])
 

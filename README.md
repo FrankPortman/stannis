@@ -4,6 +4,10 @@ This project implements a generalized NxNxD tic-tac-toe game. The game is played
 
 This is an instructive project meant to explore the concepts of game AI and search algorithms. It also has the (un)intended consequence of serving as a algo/math heavy code sample for people that want to pay me $$$.
 
+## pypy
+
+This library is entirely in base python. I recommend running it on pypy3 for maximum speed gainz.
+
 ## AI
 
 We use a combination of heuristic and objective approaches to creating an AI that can play this game. In general, if playing against this computer, you will **always** lose or tie.

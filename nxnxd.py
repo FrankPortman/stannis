@@ -232,3 +232,30 @@ class Game(object):
                 self.board.print_board()
                 print('Tie!')
                 break
+
+
+class Player(object):
+    def get_move(self, game):
+        raise NotImplemented
+
+class Human_Player(Player):
+    ''' 
+    Ask a player to make a move. Move types depend on what the game
+    itself requires.
+    '''
+    def __init__(self, name='Human'):
+        self.name = name
+
+    def get_move(self, game):
+        pass
+
+class AI_Player(Player):
+    '''
+    Initialize with an AI such as Negamax(10)
+    '''
+    def __init__(self, AI, name='Computron'):
+        self.name = name
+        self.AI = AI
+
+    def get_move(self, game):
+        pass
