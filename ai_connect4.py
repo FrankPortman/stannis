@@ -4,8 +4,8 @@ import random
 def score(game, victory, depth=0):
     if victory:
         if victory == u' ❌':
-            return 10 - depth
-        return depth - 10
+            return 20 - depth
+        return depth - 20
     return 0
 
 
@@ -138,15 +138,15 @@ class Negamax(object):
 
         def score(game, victory, depth=0):
             if victory:
-                if victory == u' ❌':
-                    return 10 - depth
-                return depth - 10
+                if victory == u' 🔴':
+                    return 20 - depth
+                return depth - 20
             return 0
 
         def _negamax(game, player, alpha, beta, victory, depth):
             moves = game.board.get_available_moves()
             if depth == 0:
-                random.shuffle(moves) #benchmark this
+                random.shuffle(moves)
             alpha_original = alpha
             serialized_state = tuple([game.board.serialize(), player])
 
@@ -167,15 +167,16 @@ class Negamax(object):
                         return entry.value, entry.move
 
             best_score = float('-inf')
-            for r_move, c_move in moves:
-                game.move(r_move, c_move)
-                victory = game.board.check_victory(r_move, c_move)
+            for c_move in moves:
+                game.move(c_move)
+                r_move, c_move = game.board.col_to_row_col(c_move)
+                victory = game.board.check_victory(r_move + 1, c_move)
                 val, _ = _negamax(game, -player, -beta, -alpha, victory, depth + 1)
                 val = -val
-                game._undo(r_move, c_move)
+                game._undo(c_move)
                 if val > best_score:
                     best_score = val
-                    best_move = (r_move, c_move)
+                    best_move = c_move
                 alpha = max(alpha, val)
                 if alpha >= beta:
                     break

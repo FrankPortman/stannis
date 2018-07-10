@@ -4,7 +4,7 @@ from itertools import product
 import random
 import shutil
 
-import ai
+import ai_connect4 as ai
 
 '''
 Generalized n x n x d tic tac toe. 
@@ -12,30 +12,32 @@ You need d in a row on an n x n grid to win.
 '''
 
 # Marks to strings
-X = u' ❌'
-O = u' ⭕'
+red = u' 🔴'
+blue = u' 🔵'
 
 class Board(object):
     '''
     Board and all that fun stuff.
     '''
-    def __init__(self, n, d):
-        self.n = n
+    def __init__(self, rows, cols, d):
+        self.rows = rows
+        self.cols = cols
         self.d = d
-        self.board = [[None for _ in range(n)] for _ in range(n)]
-        self.available_moves = set(product(range(n), range(n)))
+        self.board = [[None for _ in range(cols)] for _ in range(rows)]
+        self.column_fill = [0 for _ in range(cols)]
+        # self.available_moves = set(product(range(n), range(n)))
 
     def print_board(self):
         # columns = shutil.get_terminal_size().columns
         # border = '----' * self.n + '-' * (self.n - 1)
         # print(border.center(columns))
-        print('----' * self.n + '-' * (self.n - 1))
+        print('----' * self.cols + '-' * (self.cols - 1))
         for row in self.board:
-            rep = '  |'.join(i if i is not None else '  ' for i in row)
+            # rep = '  |'.join(i if i is not None else '  ' for i in row)
             # print(rep.center(columns))
             # print(border.center(columns))
-            print(*[i if i == X or i == O else '  ' for i in row], sep="  |")
-            print('----' * self.n + '-' * (self.n - 1))
+            print(*[i if i is not None else '  ' for i in row], sep="  |")
+            print('----' * self.cols + '-' * (self.cols - 1))
 
     def copy(self):
         return [x[:] for x in self.board]
@@ -75,7 +77,7 @@ class Board(object):
                 cc = col + col_dir * i
                 if cr < 0 or cc < 0:
                     break
-                if cr >= self.n or cc >= self.n:
+                if cr >= self.rows or cc >= self.cols:
                     break
                 if self.board[cr][cc] != val:
                     break
@@ -89,7 +91,7 @@ class Board(object):
 
         def make_scorer(row_dirs, col_dirs):
             def scorer():
-                score = 1 
+                score = 1
                 for row_dir, col_dir in zip(row_dirs, col_dirs):
                     checker = self._direction_checker(row_dir=row_dir, 
                                                       col_dir=col_dir)
@@ -109,16 +111,23 @@ class Board(object):
                diagonal_scorer()   or \
                antidiag_scorer()
 
-    def move(self, player, row, col):
+    def col_to_row_col(self, col):
+        return self.rows - self.column_fill[col] - 1, col
+
+    def move(self, player, col):
+        row, col = self.col_to_row_col(col)
         self.board[row][col] = player
+        self.column_fill[col] += 1
         # self.available_moves.remove((row, col))
 
-    def _undo(self, row, col):
-        self.board[row][col] = None
+    def _undo(self, col):
+        row, col = self.col_to_row_col(col)
+        self.board[row + 1][col] = None
+        self.column_fill[col] -= 1
         # self.available_moves.add((row, col))
 
     def get_board_state(self):
-        for r,c in product(range(self.n), range(self.n)):
+        for r, c in product(range(self.n), range(self.n)):
             victory = self.check_victory(r, c)
             if victory:
                 return victory
@@ -127,11 +136,13 @@ class Board(object):
     def get_available_moves(self):
         '''
         Returns coordinates that aren't `None` so the bot can do its thang.
+        For connect 4, we only need to check if the first row is empty. Placing
+        a move does the check for where a piece actually ends up.
         '''
         return [
-            (r, c) for r, c 
-            in product(range(self.n), range(self.n)) 
-            if self.board[r][c] is None
+            col for col, val 
+            in enumerate(self.column_fill)
+            if val < self.rows
         ]
 
 
@@ -154,10 +165,10 @@ class Game(object):
         'hh', # human vs human
     ]
 
-    def __init__(self, n, d, mode='cc'):
-        self.board = Board(n, d)
+    def __init__(self, mode='cc'):
+        self.board = Board(6, 7, 4)
         self.turn = 0
-        self.players = [X, O] if random.random() < 0.5 else [O, X]
+        self.players = [red, blue] if random.random() < 0.5 else [blue, red]
 
         if mode not in self.modes:
             Exception('Invalid mode selected.')
@@ -172,34 +183,34 @@ class Game(object):
     def current(self):
         return self.players[self.turn % 2]
 
-    def move(self, row, col):
-        self.board.move(self.current, row, col)
+    def move(self, col):
+        self.board.move(self.current, col)
         self.turn += 1
 
-    def _undo(self, row, col):
-        self.board._undo(row, col)
-        self.turn -= 1        
+    def _undo(self, col):
+        self.board._undo(col)
+        self.turn -= 1     
 
     def play(self):
-        negamax = ai.Negamax()
+        negamax = ai.Negamax(12)
 
         if self.mode != 'cc':
             idx = input('0 or 1 index?')
             idx = int(idx)
 
         def human_move():
-            row = input('row?: ')
+            #row = input('row?: ')
             col = input('col?: ')
-            row = int(row) - idx
+            #row = int(row) - idx
             col = int(col) - idx
-            return row, col
+            return col
 
         def computer_move():
-            player = -1 if self.current == O else 1
+            player = -1 if self.current == blue else 1
             #score, (row, col) = ai.negamax2(self, player)
-            score, (row, col) = negamax(self, player)
+            score, col = negamax(self, player)
             print('score: {} \n\n'.format(score))
-            return row, col
+            return col
 
         def move_handler():
             if self.mode == 'hh':
@@ -216,13 +227,14 @@ class Game(object):
             self.board.print_board()
             print('{} turn'.format(self.current))
 
-            row, col = move_handler()
-            if (row, col) not in self.board.get_available_moves():
+            col = move_handler()
+            if col not in self.board.get_available_moves():
                 print('Invalid move... try again.')
                 continue
-            self.move(row, col)
+            self.move(col)
+            row, col = self.board.col_to_row_col(col)
 
-            if self.board.check_victory(row, col):
+            if self.board.check_victory(row + 1, col):
                 self.turn -= 1
                 self.board.print_board()
                 print('{} wins!'.format(self.current))
@@ -232,30 +244,3 @@ class Game(object):
                 self.board.print_board()
                 print('Tie!')
                 break
-
-
-class Player(object):
-    def get_move(self, game):
-        raise NotImplemented
-
-class Human_Player(Player):
-    ''' 
-    Ask a player to make a move. Move types depend on what the game
-    itself requires.
-    '''
-    def __init__(self, name='Human'):
-        self.name = name
-
-    def get_move(self, game):
-        pass
-
-class AI_Player(Player):
-    '''
-    Initialize with an AI such as Negamax(10)
-    '''
-    def __init__(self, AI, name='Computron'):
-        self.name = name
-        self.AI = AI
-
-    def get_move(self, game):
-        pass
