@@ -104,10 +104,10 @@ class Board(object):
         diagonal_scorer = make_scorer([-1, 1], [-1, 1])
         antidiag_scorer = make_scorer([-1, 1], [1, -1])
 
-        return horizontal_scorer() or \
-               vertical_scorer()   or \
-               diagonal_scorer()   or \
-               antidiag_scorer()
+        return (horizontal_scorer()
+                or vertical_scorer()
+                or diagonal_scorer()
+                or antidiag_scorer())
 
     def move(self, player, row, col):
         self.board[row][col] = player
@@ -133,14 +133,6 @@ class Board(object):
             in product(range(self.n), range(self.n)) 
             if self.board[r][c] is None
         ]
-
-
-class GameVictory(Exception):
-    pass
-
-
-class GameTie(Exception):
-    pass
 
 
 class Game(object):
@@ -232,30 +224,3 @@ class Game(object):
                 self.board.print_board()
                 print('Tie!')
                 break
-
-
-class Player(object):
-    def get_move(self, game):
-        raise NotImplemented
-
-class Human_Player(Player):
-    ''' 
-    Ask a player to make a move. Move types depend on what the game
-    itself requires.
-    '''
-    def __init__(self, name='Human'):
-        self.name = name
-
-    def get_move(self, game):
-        pass
-
-class AI_Player(Player):
-    '''
-    Initialize with an AI such as Negamax(10)
-    '''
-    def __init__(self, AI, name='Computron'):
-        self.name = name
-        self.AI = AI
-
-    def get_move(self, game):
-        pass
